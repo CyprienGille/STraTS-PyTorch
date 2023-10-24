@@ -41,6 +41,7 @@ class STraTS(nn.Module):
 
     def forward(self, demog:torch.Tensor, variables:torch.Tensor, values:torch.Tensor, times:torch.Tensor, mask:Optional[torch.Tensor]=None):
         # This just follows figure 3 of the STraTS paper
+        # Note: the mask is for unobserved variables
 
         demo_emb = self.lin_2_demog(self.tanh_demog(self.lin_1_demog(demog)))
         var_emb = self.var_embedding(variables.long())
