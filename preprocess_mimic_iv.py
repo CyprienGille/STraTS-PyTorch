@@ -23,10 +23,13 @@ def value_to_index(vals):
     return indexes
 
 
-def get_item_lazy(itemid: int):
+def get_item_lazy(itemid: int) -> pl.DataFrame:
+    """Get the events for a particular itemid.
+
+    Leverage the speed of polars LazyFrames + batching.
+    """
     return (
         pl.scan_csv(data_dir + "icu/chartevents.csv")
-        .filter(pl.col("itemid").is_in([itemid]))
         .select(
             [
                 "hadm_id",
@@ -38,6 +41,7 @@ def get_item_lazy(itemid: int):
                 "valuenum",
             ]
         )
+        .filter(pl.col("itemid").is_in([itemid]))
         .with_columns(
             pl.col("charttime").str.strptime(pl.Datetime, format="%Y-%m-%d %T")
         )
@@ -49,10 +53,35 @@ def remove_outside_range(df, low, high):
     return df.filter((pl.col("valuenum") > low) & (pl.col("valuenum") < high))
 
 
+def creatinine_to_stage(value):
+    """Converts creatinine values to renal risk/injury/failure stages according to the KDIGO criteria
+
+    Parameters
+    ----------
+    value : float
+        Creatinine (serum) value, in mg/dL
+
+    Returns
+    -------
+    int
+        0: Normal; 1: Risk; 2: Injury; 3: Failure
+    """
+    if value < 1.35:
+        return 0
+    elif value < 2.68:
+        return 1
+    elif value < 4.16:
+        return 2
+    return 3
+
+
 #%%
 if __name__ == "__main__":
     # Load chart events selectively, parse dates
     print("Loading chart events... (can take some time)")
+
+    # Creatinine
+    df_creat = get_item_lazy(220615)
 
     # Heart rate
     df_hr = get_item_lazy(220045)
@@ -100,11 +129,9 @@ if __name__ == "__main__":
     # Inspired O2 fraction
     df_insp_o2 = get_item_lazy(223835)
 
-    # Creatinine
-    df_creat = get_item_lazy(220615)
-
     # Remove outliers
     print("Removing outliers...")
+    df_creat = remove_outside_range(df_creat, 0, 10)
     df_hr = remove_outside_range(df_hr, 10, 250)
     df_bp_sys = remove_outside_range(df_bp_sys, 40, 190)
     df_bp_dia = remove_outside_range(df_bp_dia, 30, 120)
@@ -121,11 +148,11 @@ if __name__ == "__main__":
     df_vol = remove_outside_range(df_vol, 0.9, 60)
     df_cvp = remove_outside_range(df_cvp, 2, 20)
     df_insp_o2 = remove_outside_range(df_insp_o2, 10, 100)
-    df_creat = remove_outside_range(df_creat, 0, 5)
 
     print("Concatenating variables...")
     df_ev = pl.concat(
         [
+            df_creat,
             df_hr,
             df_bp_sys,
             df_bp_dia,
@@ -142,9 +169,17 @@ if __name__ == "__main__":
             df_vol,
             df_cvp,
             df_insp_o2,
-            df_creat,
         ]
     )
+
+    print("Creating the label...")
+    # TODO Parallelize this
+    creat_labels = []
+    for row in df_ev.iter_rows(named=True):
+        if row["itemid"] == 220615:
+            creat_labels.append(creatinine_to_stage(row["valuenum"]))
+        else:
+            creat_labels.append(-1)
 
     # reindex the item ids starting from zero
     print("Re-indexing items...")
