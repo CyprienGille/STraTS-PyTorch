@@ -302,8 +302,8 @@ def padded_collate_fn(batch: list):
     fcast_targets = cat([t.unsqueeze(0) for t in fcast_targets])
     fcast_masks = cat([t.unsqueeze(0) for t in fcast_masks])
 
-    classif_targets = cat([t.unsqueeze(0) for t in classif_targets])
-    classif_masks = cat([t.unsqueeze(0) for t in classif_masks])
+    classif_targets = Tensor(classif_targets)
+    classif_masks = Tensor(classif_masks)
 
     return (
         demog,
