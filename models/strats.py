@@ -20,6 +20,7 @@ class STraTS(nn.Module):
                 dim_ff:int=None, 
                 dropout:float=0.0,
                 forecasting:bool=False,
+                n_classes:int=2,
                 ) -> None:
         super().__init__()
 
@@ -35,7 +36,7 @@ class STraTS(nn.Module):
         self.forecasting = forecasting
 
         self.ouput_forecasting = nn.Linear(in_features=2*dim_embed, out_features=n_var_embs)
-        self.ouput_prediction = nn.Linear(in_features=2*dim_embed, out_features=2)
+        self.ouput_prediction = nn.Linear(in_features=2*dim_embed, out_features=n_classes)
         self.softmax_prediction = nn.Softmax(dim=-1)
 
 
@@ -66,6 +67,7 @@ class STraTS_no_demog(nn.Module):
                 dim_ff:int=None, 
                 dropout:float=0.0,
                 forecasting:bool=False,
+                n_classes:int=2,
                 ) -> None:
         super().__init__()
 
@@ -78,7 +80,7 @@ class STraTS_no_demog(nn.Module):
         self.forecasting = forecasting
 
         self.ouput_forecasting = nn.Linear(in_features=dim_embed, out_features=n_var_embs)
-        self.ouput_prediction = nn.Linear(in_features=dim_embed, out_features=2)
+        self.ouput_prediction = nn.Linear(in_features=dim_embed, out_features=n_classes)
         self.softmax_prediction = nn.Softmax(dim=-1)
 
 
