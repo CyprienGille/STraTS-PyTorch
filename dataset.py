@@ -180,7 +180,6 @@ class MIMIC_Dataset(Dataset):
         self, data: pd.DataFrame, input_end_idx
     ) -> Tuple[Tensor, Tensor]:
         target = []
-        mask = []
         input_end_time = data.iloc[input_end_idx]["rel_charttime"]
 
         future_data = data.loc[
@@ -192,15 +191,13 @@ class MIMIC_Dataset(Dataset):
             # Note: if there are several observations in the obs window,
             # we only take the 1st one
             target = [future_data[self.classif_target_name].iloc[0]]
-            mask = [1.0]
         else:
             target = [-1.0]
-            mask = [0.0]
-        return Tensor(target), Tensor(mask)
+        return Tensor(target)
 
     def __getitem__(
         self, index: int
-    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
         Parameters
         ----------
@@ -208,11 +205,11 @@ class MIMIC_Dataset(Dataset):
 
         Returns
         -------
-        Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]
-            values, times, variables, died, fcast_target, fcast_mask, classif_target, classif_mask
+        Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]
+            values, times, variables, died, fcast_target, fcast_mask, classif_target
         """
         data = self.df.loc[self.df["ind"] == index].copy()
-        classif_target, classif_mask = Tensor([-1.0]), Tensor([0.0])
+        classif_target = Tensor([-1.0])
 
         if self.random_past_subset:
             # if we want to select a random subset of the observations as the input data
@@ -229,7 +226,7 @@ class MIMIC_Dataset(Dataset):
                 data, input_end_idx=input_start_idx + input_len - 1
             )
             if self.classif_target_name is not None:
-                classif_target, classif_mask = self._generate_classif_target(
+                classif_target = self._generate_classif_target(
                     data, input_end_idx=input_start_idx + input_len - 1
                 )
         else:
@@ -239,9 +236,7 @@ class MIMIC_Dataset(Dataset):
                 data, input_end_idx=-2
             )
             if self.classif_target_name is not None:
-                classif_target, classif_mask = self._generate_classif_target(
-                    data, input_end_idx=-2
-                )
+                classif_target = self._generate_classif_target(data, input_end_idx=-2)
             input_data = data.iloc[:-1]
 
         values = Tensor(input_data["valuenum"].to_numpy())
@@ -263,7 +258,6 @@ class MIMIC_Dataset(Dataset):
             fcast_target,
             fcast_mask,
             classif_target,
-            classif_mask,
         )
 
     def __len__(self) -> int:
@@ -283,7 +277,6 @@ def padded_collate_fn(batch: list):
         fcast_targets,
         fcast_masks,
         classif_targets,
-        classif_masks,
     ) = grouped_inputs
 
     padded_values = pad_sequence(values, batch_first=True, padding_value=-1e6)
@@ -303,7 +296,6 @@ def padded_collate_fn(batch: list):
     fcast_masks = cat([t.unsqueeze(0) for t in fcast_masks])
 
     classif_targets = Tensor(classif_targets)
-    classif_masks = Tensor(classif_masks)
 
     return (
         demog,
@@ -315,5 +307,4 @@ def padded_collate_fn(batch: list):
         fcast_targets,
         fcast_masks,
         classif_targets,
-        classif_masks,
     )
