@@ -178,7 +178,7 @@ class MIMIC_Dataset(Dataset):
 
     def _generate_classif_target(
         self, data: pd.DataFrame, input_end_idx, ignore_index=-1
-    ) -> Tuple[Tensor, Tensor]:
+    ) -> Tensor:
         target = []
         input_end_time = data.iloc[input_end_idx]["rel_charttime"]
 
