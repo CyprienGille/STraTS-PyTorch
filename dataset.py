@@ -197,7 +197,7 @@ class MIMIC_Dataset(Dataset):
 
     def __getitem__(
         self, index: int
-    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
         Parameters
         ----------
@@ -205,8 +205,8 @@ class MIMIC_Dataset(Dataset):
 
         Returns
         -------
-        Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]
-            values, times, variables, died, fcast_target, fcast_mask, classif_target
+        Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]
+            demog, values, times, variables, died, fcast_target, fcast_mask, classif_target
         """
         data = self.df.loc[self.df["ind"] == index].copy()
         classif_target = Tensor([-1.0])
