@@ -281,7 +281,7 @@ def padded_collate_fn(batch: list):
 
     padded_values = pad_sequence(values, batch_first=True, padding_value=-1e6)
     padded_times = pad_sequence(times, batch_first=True, padding_value=-1e6)
-    padded_variables = pad_sequence(variables, batch_first=True, padding_value=-1e6)
+    padded_variables = pad_sequence(variables, batch_first=True, padding_value=0)
 
     demog = cat([t.unsqueeze(0) for t in demog])
 
