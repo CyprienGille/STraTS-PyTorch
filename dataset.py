@@ -177,7 +177,7 @@ class MIMIC_Dataset(Dataset):
         return Tensor(target), Tensor(mask)
 
     def _generate_classif_target(
-        self, data: pd.DataFrame, input_end_idx
+        self, data: pd.DataFrame, input_end_idx, ignore_index=-1
     ) -> Tuple[Tensor, Tensor]:
         target = []
         input_end_time = data.iloc[input_end_idx]["rel_charttime"]
@@ -192,7 +192,7 @@ class MIMIC_Dataset(Dataset):
             # we only take the 1st one
             target = [future_data[self.classif_target_name].iloc[0]]
         else:
-            target = [-1.0]
+            target = [ignore_index]  # Index ignored in the loss function later
         return Tensor(target)
 
     def __getitem__(
@@ -232,12 +232,12 @@ class MIMIC_Dataset(Dataset):
         else:
             # if we want to use the full past except for the last observation
             # (which is reserved for the target)
+            input_data = data.iloc[:-1]
             fcast_target, fcast_mask = self._generate_fcast_target(
                 data, input_end_idx=-2
             )
             if self.classif_target_name is not None:
                 classif_target = self._generate_classif_target(data, input_end_idx=-2)
-            input_data = data.iloc[:-1]
 
         values = Tensor(input_data["valuenum"].to_numpy())
         times = Tensor(input_data["rel_charttime"].to_numpy())
