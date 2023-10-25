@@ -229,8 +229,7 @@ if __name__ == "__main__":
     df_ev_hadm = df_ev_hadm.with_columns(
         pl.col("ind").map_dict(val_counts_dict).alias("count")
     )
-    # df_ev_hadm = df_ev_hadm.filter((pl.col("count") > 9) & (pl.col("count") <= 1000))
-    df_ev_hadm = df_ev_hadm.filter((pl.col("count") > 9))
+    df_ev_hadm = df_ev_hadm.filter((pl.col("count") > 9) & (pl.col("count") <= 1700))
 
     # Add demographic data
     print("Adding demographic data...")
@@ -241,7 +240,7 @@ if __name__ == "__main__":
     df_ev_hadm_demog = df_ev_hadm.join(df_demog, on="subject_id")
 
     # Write csv to disk
-    # Current n of stays : 72725
+    # Current n of stays : 70074
     print("Writing to disk...")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
