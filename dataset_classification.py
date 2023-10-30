@@ -90,7 +90,7 @@ class MIMIC_Classification(MIMIC):
         Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]
             demog, values, times, variables, died
         """
-        data = self.df.loc[self.df["ind"] == index].copy()
+        data = self.df.loc[self.df["ind"] == self.indexes[index]].copy()
 
         if self.random_past_subset:
             # if we want to select a random subset of the observations as the input data

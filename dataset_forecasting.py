@@ -7,6 +7,10 @@ from torch.nn.utils.rnn import pad_sequence
 from dataset import MIMIC
 
 
+def normalize_val(val, mean, std):
+    return (val - mean) / std
+
+
 class MIMIC_Forecasting(MIMIC):
     def __init__(
         self,
@@ -39,13 +43,24 @@ class MIMIC_Forecasting(MIMIC):
     ) -> Tuple[Tensor, Tensor]:
         target = []
         mask = []
+        ind = data["ind"][0]
         input_end_time = data.iloc[input_end_idx]["rel_charttime"]
+        try:
+            time_mean = self.time_means[ind]
+            time_std = self.time_stds[ind]
+        except AttributeError:
+            # if normalize(normalize_time=True) wasn't called on this instance, no time normalization
+            time_mean = 0
+            time_std = 1
 
         for unique_itemid in self.df["itemid"].unique():
 
             item_target = data.loc[
                 (data["rel_charttime"] > input_end_time)
-                & (data["rel_charttime"] <= input_end_time + self.target_ww)
+                & (
+                    data["rel_charttime"]
+                    <= input_end_time + ((self.target_ww - time_mean) / time_std)
+                )
                 & (data["itemid"] == unique_itemid)
             ]
             if len(item_target) > 0:
@@ -71,7 +86,7 @@ class MIMIC_Forecasting(MIMIC):
         Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]
             demog, values, times, variables, fcast_target, fcast_mask
         """
-        data = self.df.loc[self.df["ind"] == index].copy()
+        data = self.df.loc[self.df["ind"] == self.indexes[index]].copy()
 
         if self.random_past_subset:
             # if we want to select a random subset of the observations as the input data
