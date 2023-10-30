@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Tuple
 from torch import Tensor, ones_like, cat
+from torch.utils.data import WeightedRandomSampler
 from torch.nn.utils.rnn import pad_sequence
 
 from dataset import MIMIC
@@ -30,6 +31,53 @@ class MIMIC_Classification(MIMIC):
 
         self.min_input_len = min_input_len
         self.random_past_subset = random_past_subset
+
+    def get_sampler(self, weight_class_0=1, weight_class_1=1, replacement=True):
+        """Generates a WeightedRandomSampler with class-dependent weights.
+        Those weights do not have to sum to 1.
+
+        Parameters
+        ----------
+        weight_class_0 : int or float, optional
+            The weight of samples of class 0 (lived), by default 1
+        weight_class_1 : int or float, optional
+            The weight of samples of class 1 (died), by default 1
+        replacement : bool, optional
+            Whether samples should be drawn with replacement from the sampler, by default True
+
+        Returns
+        -------
+        torch.utils.data.WeightedRandomSampler
+            The random sampler with per-sample weights according to the labels
+        """
+        if (
+            self.sampler is not None
+            and self.w0 == weight_class_0
+            and self.w1 == weight_class_1
+        ):
+            return self.sampler  # avoid re-generating the sampler
+
+        self.w0 = weight_class_0
+        self.w1 = weight_class_1
+
+        weights = []
+
+        if self.w0 == self.w1:
+            # No need to check the labels
+            weights = [self.w0] * self.__len__()
+        else:
+            for ind in range(self.__len__()):
+                data = self.df.loc[self.df["ind"] == ind].copy()
+                survived = data["deathtime"].hasnans
+                if survived:
+                    weights.append(self.w0)
+                else:
+                    weights.append(self.w1)
+
+        self.sampler = WeightedRandomSampler(
+            weights=weights, num_samples=self.__len__(), replacement=replacement
+        )
+        return self.sampler
 
     def __getitem__(self, index: int) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
