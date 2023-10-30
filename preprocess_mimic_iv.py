@@ -172,15 +172,6 @@ if __name__ == "__main__":
         ]
     )
 
-    print("Creating the label...")
-    # TODO Parallelize this
-    creat_labels = []
-    for row in df_ev.iter_rows(named=True):
-        if row["itemid"] == 220615:
-            creat_labels.append(creatinine_to_stage(row["valuenum"]))
-        else:
-            creat_labels.append(-1)
-
     # reindex the item ids starting from zero
     print("Re-indexing items...")
     df_ev = df_ev.with_columns(
