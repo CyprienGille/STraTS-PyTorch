@@ -23,36 +23,6 @@ def value_to_index(vals):
     return indexes
 
 
-def get_item_lazy(itemid: int) -> pl.DataFrame:
-    """Get the events for a particular itemid.
-
-    Leverage the speed of polars LazyFrames + batching.
-    """
-    return (
-        pl.scan_csv(data_dir + "icu/chartevents.csv")
-        .select(
-            [
-                "hadm_id",
-                "stay_id",
-                "subject_id",
-                "charttime",
-                "itemid",
-                "value",
-                "valuenum",
-            ]
-        )
-        .filter(pl.col("itemid").is_in([itemid]))
-        .with_columns(
-            pl.col("charttime").str.strptime(pl.Datetime, format="%Y-%m-%d %T")
-        )
-        .collect(streaming=True)
-    )
-
-
-def remove_outside_range(df, low, high):
-    return df.filter((pl.col("valuenum") > low) & (pl.col("valuenum") < high))
-
-
 def creatinine_to_stage(value):
     """Converts creatinine values to renal risk/injury/failure stages according to the KDIGO criteria
 
@@ -77,6 +47,35 @@ def creatinine_to_stage(value):
 
 #%%
 if __name__ == "__main__":
+
+    def get_item_lazy(itemid: int) -> pl.DataFrame:
+        """Get the events for a particular itemid.
+
+        Leverage the speed of polars LazyFrames + batching.
+        """
+        return (
+            pl.scan_csv(data_dir + "icu/chartevents.csv")
+            .select(
+                [
+                    "hadm_id",
+                    "stay_id",
+                    "subject_id",
+                    "charttime",
+                    "itemid",
+                    "value",
+                    "valuenum",
+                ]
+            )
+            .filter(pl.col("itemid").is_in([itemid]))
+            .with_columns(
+                pl.col("charttime").str.strptime(pl.Datetime, format="%Y-%m-%d %T")
+            )
+            .collect(streaming=True)
+        )
+
+    def remove_outside_range(df, low, high):
+        return df.filter((pl.col("valuenum") > low) & (pl.col("valuenum") < high))
+
     # Load chart events selectively, parse dates
     print("Loading chart events... (can take some time)")
 
