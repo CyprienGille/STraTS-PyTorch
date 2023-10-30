@@ -1,12 +1,9 @@
 import numpy as np
-import pandas as pd
-from typing import Tuple, Optional
+from typing import Tuple
 from torch import Tensor, ones_like, cat
-from torch.utils.data import Dataset, WeightedRandomSampler
 from torch.nn.utils.rnn import pad_sequence
 
 from dataset import MIMIC
-from preprocess_mimic_iv import value_to_index
 
 
 class MIMIC_Classification(MIMIC):
