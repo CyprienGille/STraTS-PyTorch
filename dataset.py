@@ -35,14 +35,14 @@ class MIMIC(Dataset):
             ],
         )
 
+        self.indexes = self.df["ind"].unique()
+
     def restrict_to_indexes(self, indexes):
+        self.indexes = indexes
         self.df = self.df.loc[self.df["ind"].isin(indexes)]
-        self.reindex()
 
-    def reindex(self):
-        self.df["ind"] = value_to_index(self.df["ind"])
-
-    def normalize(self, normalize_vars=True, normalize_time=True):
+    def normalize(self, normalize_vars=True, normalize_times=True):
+        """Note: per-stay time normalization can be slow if there are a lot of stays."""
         if normalize_vars:
             # per-variable normalization
             self.means = {}
@@ -63,7 +63,7 @@ class MIMIC(Dataset):
             self.age_std = data.std(ddof=0)
             self.df["anchor_age"] = (data - self.age_mean) / self.age_std
 
-        if normalize_time:
+        if normalize_times:
             # per-stay time normalization
             # Note: can be time consuming
             self.time_means = {}
@@ -78,4 +78,4 @@ class MIMIC(Dataset):
 
     def __len__(self) -> int:
         """Number of stays in this dataset."""
-        return len(self.df["ind"].unique())
+        return len(self.indexes)
