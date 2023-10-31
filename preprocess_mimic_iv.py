@@ -23,28 +23,6 @@ def value_to_index(vals):
     return indexes
 
 
-def creatinine_to_stage(value):
-    """Converts creatinine values to renal risk/injury/failure stages according to the KDIGO criteria
-
-    Parameters
-    ----------
-    value : float
-        Creatinine (serum) value, in mg/dL
-
-    Returns
-    -------
-    int
-        0: Normal; 1: Risk; 2: Injury; 3: Failure
-    """
-    if value < 1.35:
-        return 0
-    elif value < 2.68:
-        return 1
-    elif value < 4.16:
-        return 2
-    return 3
-
-
 #%%
 if __name__ == "__main__":
 
