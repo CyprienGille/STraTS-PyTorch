@@ -1,8 +1,6 @@
-import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from torch.utils.data import Dataset
-
-from preprocess_mimic_iv import value_to_index
 
 
 class MIMIC(Dataset):
@@ -31,13 +29,18 @@ class MIMIC(Dataset):
         self.indexes = indexes
         self.df = self.df.loc[self.df["ind"].isin(indexes)]
 
-    def normalize(self, normalize_vars=True, normalize_times=True):
+    def normalize(self, normalize_vars=True, normalize_times=True, verbose=False):
         """Note: per-stay time normalization can be slow if there are a lot of stays."""
         if normalize_vars:
+            if verbose:
+                print("Normalizing variables...")
+                itemids = tqdm(self.df["itemid"].unique())
+            else:
+                itemids = self.df["itemid"].unique()
             # per-variable normalization
             self.means = {}
             self.stds = {}
-            for unique_itemid in self.df["itemid"].unique():
+            for unique_itemid in itemids:
                 data = self.df.loc[self.df["itemid"] == unique_itemid][
                     "valuenum"
                 ].copy()
@@ -54,11 +57,16 @@ class MIMIC(Dataset):
             self.df["anchor_age"] = (data - self.age_mean) / self.age_std
 
         if normalize_times:
+            if verbose:
+                print("Normalizing times...")
+                inds = tqdm(self.df["ind"].unique())
+            else:
+                inds = self.df["ind"].unique()
             # per-stay time normalization
             # Note: can be time consuming
             self.time_means = {}
             self.time_stds = {}
-            for ind in self.df["ind"].unique():
+            for ind in inds:
                 data = self.df.loc[self.df["ind"] == ind]["rel_charttime"].copy()
                 self.time_means[ind] = data.mean()
                 self.time_stds[ind] = data.std(ddof=0)
