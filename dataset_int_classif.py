@@ -13,10 +13,6 @@ class MIMIC_Int_Classif(MIMIC):
         ----------
         data_path : str
             Path to the .csv containing preprocessed data
-        tgt_item_ind : int, optional
-            index of the target variable in the 'itemid' column, by default 0
-        val_to_label_func : function, optional
-            Function that takes a value of the target variable and return a class label, by default creatinine_to_stage
         """
         super().__init__(data_path)
 
