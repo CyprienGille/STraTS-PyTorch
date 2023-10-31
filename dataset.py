@@ -23,16 +23,6 @@ class MIMIC(Dataset):
         self.df = pd.read_csv(
             data_path,
             parse_dates=True,
-            usecols=[
-                "ind",
-                "rel_charttime",
-                "valuenum",
-                "itemid",
-                "deathtime",
-                "count",
-                "gender",
-                "anchor_age",
-            ],
         )
 
         self.indexes = self.df["ind"].unique()
