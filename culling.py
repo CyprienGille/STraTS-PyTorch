@@ -1,6 +1,8 @@
 import pandas as pd
 from tqdm import tqdm
 
+from preprocess_mimic_iv import value_to_index
+
 
 def creatinine_to_stage(value):
     """Converts creatinine values to renal risk/injury/failure stages
@@ -72,6 +74,8 @@ if __name__ == "__main__":
             to_drop_indexes = to_drop_indexes.append(data.index)
 
     df.drop(to_drop_indexes, inplace=True)
+    # reindex the stays
+    df["ind"] = value_to_index(df["ind"])
 
     print("Writing data...")
     df.to_csv(out_path)
