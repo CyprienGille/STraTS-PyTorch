@@ -112,7 +112,7 @@ if __name__ == "__main__":
     df_hr = remove_outside_range(df_hr, 10, 250)
     df_bp_sys = remove_outside_range(df_bp_sys, 40, 190)
     df_bp_dia = remove_outside_range(df_bp_dia, 30, 120)
-    df_bp_mean = remove_outside_range(df_bp_dia, 30, 190)
+    df_bp_mean = remove_outside_range(df_bp_mean, 30, 190)
     df_temf = remove_outside_range(df_temf, 80, 120)
     df_weig_D = remove_outside_range(df_weig_D, 10, 500)
     df_weig_A = remove_outside_range(df_weig_A, 10, 500)
