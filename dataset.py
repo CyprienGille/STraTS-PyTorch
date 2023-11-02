@@ -41,14 +41,25 @@ class MIMIC(Dataset):
             self.means = {}
             self.stds = {}
             for unique_itemid in itemids:
-                data = self.df.loc[self.df["itemid"] == unique_itemid][
-                    "valuenum"
+                data = self.df.loc[
+                    self.df["itemid"] == unique_itemid, "valuenum"
                 ].copy()
-                self.means[unique_itemid] = data.mean()
-                self.stds[unique_itemid] = data.std(ddof=0)
-                self.df.loc[self.df["itemid"] == unique_itemid, "valuenum"] = (
-                    data - data.mean()
-                ) / data.std(ddof=0)
+
+                mean = data.mean()
+                std = data.std(ddof=0)
+
+                self.means[unique_itemid] = mean
+                self.stds[unique_itemid] = std
+
+                if std == 0:
+                    # if there is only one value for this itemid
+                    self.df.loc[self.df["itemid"] == unique_itemid, "valuenum"] = (
+                        data - mean
+                    )
+                else:
+                    self.df.loc[self.df["itemid"] == unique_itemid, "valuenum"] = (
+                        data - mean
+                    ) / std
 
             # age normalization
             data = self.df["anchor_age"].copy()
@@ -67,12 +78,21 @@ class MIMIC(Dataset):
             self.time_means = {}
             self.time_stds = {}
             for ind in inds:
-                data = self.df.loc[self.df["ind"] == ind]["rel_charttime"].copy()
-                self.time_means[ind] = data.mean()
-                self.time_stds[ind] = data.std(ddof=0)
-                self.df.loc[self.df["ind"] == ind, "rel_charttime"] = (
-                    data - data.mean()
-                ) / data.std(ddof=0)
+                data = self.df.loc[self.df["ind"] == ind, "rel_charttime"].copy()
+
+                mean = data.mean()
+                std = data.std(ddof=0)
+
+                self.time_means[ind] = mean
+                self.time_stds[ind] = std
+
+                if std == 0:
+                    # If there is only one time value
+                    self.df.loc[self.df["ind"] == ind, "rel_charttime"] = data - mean
+                else:
+                    self.df.loc[self.df["ind"] == ind, "rel_charttime"] = (
+                        data - mean
+                    ) / std
 
     def __len__(self) -> int:
         """Number of stays in this dataset."""
