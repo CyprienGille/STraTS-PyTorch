@@ -1,4 +1,4 @@
-#%%
+# %%
 # Imports and definitions
 import polars as pl
 import numpy as np
@@ -23,7 +23,7 @@ def value_to_index(vals):
     return indexes
 
 
-#%%
+# %%
 if __name__ == "__main__":
 
     def get_item_lazy(itemid: int) -> pl.DataFrame:
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     df_ev_hadm_demog = df_ev_hadm.join(df_demog, on="subject_id")
 
     # Write csv to disk
-    # Current n of stays : 70074
+    # Current n of stays :
     print("Writing to disk...")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
