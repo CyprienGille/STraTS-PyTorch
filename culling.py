@@ -1,3 +1,8 @@
+"""Cull the stays in a preprocessed database to keep only:
+- The stays with at least one measure of the target variable
+- The part of the stays before (but not including) the last observation of the target variable
+Adds a class label for each kept stay according to that last observation.
+"""
 import pandas as pd
 from tqdm import tqdm
 
@@ -35,8 +40,8 @@ data_path = "generated/creat17NoText.csv"
 # out_path = data_path
 out_path = "generated/creat17Notext_culled.csv"
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     print("Reading data...")
     df = pd.read_csv(data_path)
 
