@@ -56,6 +56,7 @@ if __name__ == "__main__":
         pbar = indexes
 
     for ind in pbar:
+        # Note: this can in theory be parallelized
         data = df[df["ind"] == ind].copy()
         try:
             # get the index of the last target observation
