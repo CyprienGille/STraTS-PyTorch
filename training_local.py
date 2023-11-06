@@ -25,10 +25,10 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 architecture = STraTS
 train_prop = 0.8
-train_batch_size = 20
-test_batch_size = 20
+train_batch_size = 15
+test_batch_size = 15
 learning_rate = 0.0001
-num_epochs = 1
+num_epochs = 10
 dropout = 0.2
 n_layers = 3
 dim_embed = 104
