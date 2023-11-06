@@ -208,7 +208,7 @@ if __name__ == "__main__":
     df_ev_hadm_demog = df_ev_hadm.join(df_demog, on="subject_id")
 
     # Write csv to disk
-    # Current n of stays :
+    # Current n of stays : 70071
     print("Writing to disk...")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
