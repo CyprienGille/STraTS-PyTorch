@@ -30,7 +30,9 @@ class MIMIC(Dataset):
         self.df = self.df.loc[self.df["ind"].isin(indexes)]
 
     def normalize(self, normalize_vars=True, normalize_times=True, verbose=False):
-        """Note: per-stay time normalization can be slow if there are a lot of stays."""
+        """Note: per-stay time normalization can be slow if there are a lot of stays.
+        TODO Try global time normalization
+        """
         if normalize_vars:
             if verbose:
                 print("Normalizing variables...")
