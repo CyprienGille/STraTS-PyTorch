@@ -1,0 +1,2 @@
+Note: the typical order in which you would run the scripts in this repository is the following: 
+`preprocess_mimiv_iv.py` (once) $\to$ `culling.py` (once) $\to$ `training_local.py` $\to$ `evaluate_int_classif.py`
