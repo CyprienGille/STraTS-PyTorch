@@ -187,6 +187,7 @@ def test_model(
 
 
 # Main part of the script
+print("Computing starting test loss...")
 best_test_loss = test_model(model, test_dl, loss_fn=loss_fn)
 print(f"Starting test loss: {best_test_loss:.6f}")
 
