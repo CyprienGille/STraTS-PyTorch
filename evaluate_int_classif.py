@@ -58,7 +58,7 @@ if __name__ == "__main__":
         data_path="generated/creat17NoText_culled.csv",
     )
     test_ds.restrict_to_indexes(np.load(path + "test_idx.npy"))
-    test_ds.normalize(normalize_times=False, normalize_vars=True, verbose=True)
+    test_ds.normalize(normalize_times=True, normalize_vars=True, verbose=True)
 
     test_dl = DataLoader(
         test_ds, batch_size=1, collate_fn=padded_collate_fn, shuffle=False
@@ -68,8 +68,8 @@ if __name__ == "__main__":
         n_var_embs=17,
         dim_demog=2,
         dropout=0.0,
-        n_layers=3,
-        dim_embed=104,
+        n_layers=2,
+        dim_embed=52,
         n_heads=4,
         forecasting=False,
         n_classes=4,

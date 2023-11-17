@@ -28,17 +28,17 @@ train_prop = 0.8
 train_batch_size = 15
 test_batch_size = 15
 learning_rate = 0.0001
-num_epochs = 10
+num_epochs = 5
 dropout = 0.2
-n_layers = 3
-dim_embed = 104
+n_layers = 2
+dim_embed = 52
 n_heads = 4
 weight_class_0 = 1.33
-weight_class_1 = 7.5
+weight_class_1 = 8
 weight_class_2 = 21.0
 weight_class_3 = 22.0
 normalize_vars = True
-normalize_times = False
+normalize_times = True
 sched_patience = 2
 
 
