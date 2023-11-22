@@ -3,8 +3,8 @@ from torch.utils.data import DataLoader
 import numpy as np
 from tqdm import tqdm
 
-from dataset_int_classif import MIMIC_Int_Classif, padded_collate_fn
-from models.strats import STraTS
+from strats_pytorch.datasets.dataset_int_classif import MIMIC_Int_Classif, padded_collate_fn
+from strats_pytorch.models.strats import STraTS
 
 
 def get_y_true_y_probs(
