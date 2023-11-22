@@ -1,12 +1,11 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
 name='strats_pytorch',
 version='1.0.0',
 author='Cyprien Gille',
 author_email='cyprien.gille@umons.ac.be',
-packages=['strats_pytorch',
-],
+packages=[find_packages()],
 include_package_data=True,
 package_data={},
 scripts=[],
