@@ -2,7 +2,7 @@ from typing import Tuple
 from torch import Tensor, ones_like, cat
 from torch.nn.utils.rnn import pad_sequence
 
-from dataset import MIMIC
+from strats_pytorch.datasets.dataset import MIMIC
 
 
 class MIMIC_Int_Classif(MIMIC):

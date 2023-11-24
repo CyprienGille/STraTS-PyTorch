@@ -4,9 +4,9 @@ from torch import nn
 from math import sqrt
 from typing import Optional
 
-from models.cve import CVE
-from models.attention import Attention
-from models.transformer import TransformerEncoderWrapper
+from strats_pytorch.models.cve import CVE
+from strats_pytorch.models.attention import Attention
+from strats_pytorch.models.transformer import TransformerEncoderWrapper
 
 
 class STraTS(nn.Module):
