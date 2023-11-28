@@ -35,6 +35,7 @@ def creatinine_to_stage(value):
 # Params
 progress_bar = True
 tgt_item_id = 0  # the id of the target variable
+keep_tgt_var = False
 val_to_label_func = creatinine_to_stage
 data_path = "generated/creat17NoText.csv"
 # out_path = data_path
@@ -74,6 +75,10 @@ if __name__ == "__main__":
             # Only keep the part of the stay before the last observation of the target variable
             to_drop = data[data["rel_charttime"] >= last_obs_time]
             to_drop_indexes = to_drop_indexes.append(to_drop.index)
+            if not keep_tgt_var:
+                to_drop_indexes = to_drop_indexes.append(
+                    data[data["itemid"] == tgt_item_id].index
+                )
 
             # Create the label for this stay
             ind_to_label[ind] = val_to_label_func(last_obs_val)
