@@ -48,7 +48,7 @@ if __name__ == "__main__":
             .with_columns(
                 pl.col("charttime").str.strptime(pl.Datetime, format="%Y-%m-%d %T")
             )
-            .collect(streaming=True)
+            .collect(streaming=False)
         )
 
     def remove_outside_range(df, low, high):

@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  strats-pytorch:
+    shm_size: '1024m'
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - USER_ID=$USER_ID
+        - GROUP_ID=$GROUP_ID
+    image: strats-pytorch
+    tty: true
+    volumes:
+      - .:/notebook_data
+      - ../vscode/strats-pytorch:/home/user/vscode-server
+      - ../mimic-iv-2.2:/mimic-iv-2.2
+    user: ${USER_ID}:${GROUP_ID}
+    ports:
+      - 7701:8888
+    environment:
+      - DATA_DIR=/notebook_data/data
+      - NVIDIA_VISIBLE_DEVICES=all
+    runtime: nvidia
+    working_dir: /notebook_data

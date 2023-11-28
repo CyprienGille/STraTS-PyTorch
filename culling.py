@@ -38,7 +38,7 @@ tgt_item_id = 0  # the id of the target variable
 val_to_label_func = creatinine_to_stage
 data_path = "generated/creat17NoText.csv"
 # out_path = data_path
-out_path = "generated/creat17Notext_culled.csv"
+out_path = "generated/creat17NoText_culled.csv"
 
 
 if __name__ == "__main__":

@@ -8,8 +8,8 @@ import torch
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 
-from models.strats import STraTS
-from dataset_int_classif import MIMIC_Int_Classif, padded_collate_fn
+from strats_pytorch.models.strats import STraTS
+from strats_pytorch.datasets.dataset_int_classif import MIMIC_Int_Classif, padded_collate_fn
 
 # Hyperparameters
 exp_dir = "exp_creatinine/"
