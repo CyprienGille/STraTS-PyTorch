@@ -47,6 +47,8 @@ if __name__ == "__main__":
 
     to_drop_indexes = pd.Index([])
 
+    ind_to_label = {}
+
     indexes = df["ind"].unique()
 
     print("Culling stays...")
@@ -74,12 +76,21 @@ if __name__ == "__main__":
             to_drop_indexes = to_drop_indexes.append(to_drop.index)
 
             # Create the label for this stay
-            df.loc[df["ind"] == ind, "label"] = val_to_label_func(last_obs_val)
+            ind_to_label[ind] = val_to_label_func(last_obs_val)
         else:
             # remove stays with no target measure
             to_drop_indexes = to_drop_indexes.append(data.index)
 
     df.drop(to_drop_indexes, inplace=True)
+    # add labels
+    indexes = df["ind"].unique()
+    if progress_bar:
+        pbar = tqdm(indexes)
+    else:
+        pbar = indexes
+    for ind in pbar:
+        df.loc[df["ind"] == ind, "label"] = ind_to_label[ind]
+
     # reindex the stays
     df["ind"] = value_to_index(df["ind"])
 
