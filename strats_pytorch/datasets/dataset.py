@@ -29,10 +29,10 @@ class MIMIC(Dataset):
         self.indexes = indexes
         self.df = self.df.loc[self.df["ind"].isin(indexes)]
 
-    def normalize(self, normalize_vars=True, normalize_times=True, verbose=False):
-        """Note: per-stay time normalization can be slow if there are a lot of stays.
-        TODO Try global time normalization
-        """
+    def normalize(
+        self, normalize_vars=True, normalize_times=True, per_stay=False, verbose=False
+    ):
+        """Note: per-stay time normalization can be slow if there are a lot of stays."""
         if normalize_vars:
             if verbose:
                 print("Normalizing variables...")
@@ -70,31 +70,43 @@ class MIMIC(Dataset):
             self.df["anchor_age"] = (data - self.age_mean) / self.age_std
 
         if normalize_times:
-            if verbose:
-                print("Normalizing times...")
-                inds = tqdm(self.df["ind"].unique())
-            else:
-                inds = self.df["ind"].unique()
-            # per-stay time normalization
-            # Note: can be time consuming
-            self.time_means = {}
-            self.time_stds = {}
-            for ind in inds:
-                data = self.df.loc[self.df["ind"] == ind, "rel_charttime"].copy()
-
-                mean = data.mean()
-                std = data.std(ddof=0)
-
-                self.time_means[ind] = mean
-                self.time_stds[ind] = std
-
-                if std == 0:
-                    # If there is only one time value
-                    self.df.loc[self.df["ind"] == ind, "rel_charttime"] = data - mean
+            if per_stay:
+                if verbose:
+                    print("Normalizing times...")
+                    inds = tqdm(self.indexes)
                 else:
-                    self.df.loc[self.df["ind"] == ind, "rel_charttime"] = (
-                        data - mean
-                    ) / std
+                    inds = self.indexes
+                # per-stay time normalization
+                # Note: can be time consuming
+                self.time_means = {}
+                self.time_stds = {}
+                for ind in inds:
+                    data = self.df.loc[self.df["ind"] == ind, "rel_charttime"].copy()
+
+                    mean = data.mean()
+                    std = data.std(ddof=0)
+
+                    self.time_means[ind] = mean
+                    self.time_stds[ind] = std
+
+                    if std == 0:
+                        # If there is only one time value
+                        self.df.loc[self.df["ind"] == ind, "rel_charttime"] = (
+                            data - mean
+                        )
+                    else:
+                        self.df.loc[self.df["ind"] == ind, "rel_charttime"] = (
+                            data - mean
+                        ) / std
+            else:
+                if verbose:
+                    print("Normalizing times...")
+
+                # Global time normalization
+                data = self.df["rel_charttime"].copy()
+                self.time_mean = data.mean()
+                self.time_std = data.std(ddof=0)
+                self.df["rel_charttime"] = (data - self.time_mean) / self.time_std
 
     def __len__(self) -> int:
         """Number of stays in this dataset."""

@@ -9,7 +9,10 @@ from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 
 from strats_pytorch.models.strats import STraTS
-from strats_pytorch.datasets.dataset_int_classif import MIMIC_Int_Classif, padded_collate_fn
+from strats_pytorch.datasets.dataset_int_classif import (
+    MIMIC_Int_Classif,
+    padded_collate_fn,
+)
 
 # Hyperparameters
 exp_dir = "exp_creatinine/"
@@ -57,10 +60,16 @@ train_indexes, test_indexes = train_test_split(
 train_ds.restrict_to_indexes(train_indexes)
 test_ds.restrict_to_indexes(test_indexes)
 train_ds.normalize(
-    normalize_vars=normalize_vars, normalize_times=normalize_times, verbose=True
+    normalize_vars=normalize_vars,
+    normalize_times=normalize_times,
+    per_stay=False,
+    verbose=True,
 )
 test_ds.normalize(
-    normalize_vars=normalize_vars, normalize_times=normalize_times, verbose=True
+    normalize_vars=normalize_vars,
+    normalize_times=normalize_times,
+    per_stay=False,
+    verbose=True,
 )
 
 
