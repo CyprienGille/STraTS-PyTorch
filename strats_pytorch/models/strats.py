@@ -45,7 +45,6 @@ class STraTS(nn.Module):
         self.ouput_prediction = nn.Linear(
             in_features=2 * dim_embed, out_features=n_classes
         )
-        self.softmax_prediction = nn.Softmax(dim=-1)
 
     def forward(
         self,
@@ -71,7 +70,7 @@ class STraTS(nn.Module):
         concat = torch.concat((fused_emb, demo_emb), dim=1)
         if self.forecasting:
             return self.ouput_forecasting(concat)
-        return self.softmax_prediction(self.ouput_prediction(concat).squeeze())
+        return self.ouput_prediction(concat).squeeze()
 
 
 class STraTS_no_demog(nn.Module):
@@ -104,7 +103,6 @@ class STraTS_no_demog(nn.Module):
             in_features=dim_embed, out_features=n_var_embs
         )
         self.ouput_prediction = nn.Linear(in_features=dim_embed, out_features=n_classes)
-        self.softmax_prediction = nn.Softmax(dim=-1)
 
     def forward(
         self,
@@ -122,4 +120,4 @@ class STraTS_no_demog(nn.Module):
         fused_emb = torch.sum(contextual_emb * attn_weights, dim=-2)
         if self.forecasting:
             return self.ouput_forecasting(fused_emb)
-        return self.softmax_prediction(self.ouput_prediction(fused_emb).squeeze())
+        return self.ouput_prediction(fused_emb).squeeze()
