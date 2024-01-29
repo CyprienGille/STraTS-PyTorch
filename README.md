@@ -3,7 +3,7 @@ Note: the typical order in which you would run the scripts in this repository is
 
 # Prerequisites
 
-You should have downloaded the MIMIV-IV dataset. It is available [here](https://physionet.org/content/mimiciv/2.2/). To be able to download it, you need to complet ea training, as indicated on the MIMIC website.
+You should have downloaded the MIMIV-IV dataset. It is available [here](https://physionet.org/content/mimiciv/2.2/). To be able to download it, you need to complete a training, as indicated on the MIMIC website.
 
 This dataset should then be placed in a `mimic-iv-2.2` folder, as such:
 
