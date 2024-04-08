@@ -1,6 +1,7 @@
 import pandas as pd
-from tqdm import tqdm
+from numpy import float64, int64
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 
 class MIMIC(Dataset):
@@ -21,9 +22,25 @@ class MIMIC(Dataset):
         self.df = pd.read_csv(
             data_path,
             parse_dates=True,
+            usecols=[
+                "itemid",
+                "valuenum",
+                "rel_charttime",
+                "ind",
+                "gender",
+                "anchor_age",
+            ],
+            dtype={
+                "itemid": int64,
+                "valuenum": float64,
+                "rel_charttime": int64,
+                "ind": int64,
+                "anchor_age": int64,
+            },
         )
-
         self.indexes = self.df["ind"].unique()
+        self.normed_vars = False
+        self.normed_times = False
 
     def restrict_to_indexes(self, indexes):
         self.indexes = indexes
@@ -107,6 +124,8 @@ class MIMIC(Dataset):
                 self.time_mean = data.mean()
                 self.time_std = data.std(ddof=0)
                 self.df["rel_charttime"] = (data - self.time_mean) / self.time_std
+        self.normed_vars = normalize_vars
+        self.normed_times = normalize_times
 
     def __len__(self) -> int:
         """Number of stays in this dataset."""
