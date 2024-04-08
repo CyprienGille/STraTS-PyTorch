@@ -1,11 +1,13 @@
 """Pytorch Implementation of STraTS (Tipirneni & Reddy, 2022)"""
-import torch
-from torch import nn
+
 from math import sqrt
 from typing import Optional
 
-from strats_pytorch.models.cve import CVE
+import torch
+from torch import nn
+
 from strats_pytorch.models.attention import Attention
+from strats_pytorch.models.cve import CVE
 from strats_pytorch.models.transformer import TransformerEncoderWrapper
 
 
