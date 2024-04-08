@@ -106,7 +106,7 @@ def print_metrics(y_true, y_pred, y_probs=None):
 
 
 if __name__ == "__main__":
-    exp_n = 97
+    exp_n = 88
     path = f"exp_creatinine/exp_{exp_n}/"
 
     model, test_dl = get_model_and_dl(

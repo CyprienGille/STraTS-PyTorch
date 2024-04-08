@@ -1,18 +1,19 @@
 # Imports
 import os
-import numpy as np
-from tqdm import tqdm
 from typing import Optional
-from sklearn.model_selection import train_test_split
+
+import numpy as np
 import torch
+from sklearn.model_selection import train_test_split
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
-from strats_pytorch.models.strats import STraTS
 from strats_pytorch.datasets.dataset_int_classif import (
     MIMIC_Int_Classif,
     padded_collate_fn,
 )
+from strats_pytorch.models.strats import STraTS
 
 # Hyperparameters
 exp_dir = "exp_creatinine/"
@@ -28,12 +29,12 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 architecture = STraTS
 train_prop = 0.8
-train_batch_size = 15
-test_batch_size = 15
+train_batch_size = 10
+test_batch_size = 10
 learning_rate = 0.0001
 num_epochs = 10
 dropout = 0.1
-n_layers = 5
+n_layers = 4
 dim_embed = 104
 n_heads = 4
 weight_class_0 = 1.35
@@ -97,13 +98,14 @@ test_dl = DataLoader(
 
 # Model
 model = architecture(
-    n_var_embs=17,
+    n_var_embs=29,
     dim_demog=2,
     dim_embed=dim_embed,
     n_layers=n_layers,
     n_heads=n_heads,
     dropout=dropout,
     forecasting=False,
+    regression=False,
     n_classes=4,
 )
 model = model.to(DEVICE)
@@ -118,7 +120,7 @@ weight = torch.Tensor(
 loss_fn = torch.nn.CrossEntropyLoss(weight=weight)
 # LR Scheduler
 sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optim, patience=sched_patience, verbose=True
+    optim, factor=0.5, patience=sched_patience, verbose=True
 )
 
 
