@@ -1,5 +1,6 @@
 """A simple masked attention module (uses 'Additive attention', cf Bahdanau)"""
-from torch import nn, Tensor
+
+from torch import Tensor, nn
 
 
 class Attention(nn.Module):
