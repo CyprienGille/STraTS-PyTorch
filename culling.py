@@ -3,13 +3,14 @@
 - The part of the stays before (but not including) the last observation of the target variable
 Adds a class label for each kept stay according to that last observation.
 """
+
 import pandas as pd
 from tqdm import tqdm
 
-from preprocess_mimic_iv import value_to_index
+from strats_pytorch.utils import value_to_index
 
 
-def creatinine_to_stage(value):
+def creat_to_4_stages(value):
     """Converts creatinine values to renal risk/injury/failure stages
     according to the KDIGO criteria
 
@@ -36,10 +37,9 @@ def creatinine_to_stage(value):
 progress_bar = True
 tgt_item_id = 0  # the id of the target variable
 keep_tgt_var = False
-val_to_label_func = creatinine_to_stage
-data_path = "generated/creat17NoText.csv"
-# out_path = data_path
-out_path = "generated/creat17NoText_culled.csv"
+val_to_label_func = creat_to_4_stages
+data_path = "generated/29var_EH.csv"
+out_path = "generated/29var_EH_culled.csv"
 
 
 if __name__ == "__main__":
