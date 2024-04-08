@@ -1,27 +1,16 @@
 # %%
 # Imports and definitions
-import polars as pl
-import numpy as np
 import os
+
+import numpy as np
+import polars as pl
+
+from strats_pytorch.utils import value_to_index
 
 data_dir = "../mimic-iv-2.2/"
 output_dir = "generated/"
 output_csv_name = "29var_EH.csv"
 origins_to_keep = ["EMERGENCY ROOM", "TRANSFER FROM HOSPITAL"]
-
-
-def value_to_index(vals):
-    d = {}
-    indexes = []
-    free_index = 0  # the lowest unused index
-    for id in vals:
-        if id not in d.keys():
-            # if the id is new
-            # allocate to the id the free index
-            d[id] = free_index
-            free_index += 1
-        indexes.append(d[id])
-    return indexes
 
 
 # %%
@@ -143,19 +132,6 @@ if __name__ == "__main__":
     # Glucose (serum)
     df_gluc = get_item_lazy(220621)
 
-    # # Position
-    # df_position = get_item_lazy(224093)
-
-    # # Impaired Fluid Balance NCP - Interventions
-    # df_fluid_bal = get_item_lazy(228898)
-
-    # # Capillary refill L/R
-    # df_capil_L = get_item_lazy(224308)
-    # df_capil_R = get_item_lazy(223951)
-
-    # # Impaired Tissue Perfusion NCP - Interventions
-    # df_imp_perf = get_item_lazy(228928)
-
     # Remove outliers
     print("Removing outliers...")
     df_creat = remove_outside_range(df_creat, 0, 10)
@@ -187,45 +163,6 @@ if __name__ == "__main__":
     df_po2_art = remove_outside_range(df_po2_art, 0, 1000)
     df_height = remove_outside_range(df_height, 0, 300)
     df_gluc = remove_outside_range(df_gluc, 0, 500)
-
-    # convert categorical to value
-    # TODO better handling of categorical values - one-hot?
-    # print("Converting categorical variables...")
-    # df_position = df_position.with_columns(
-    #     pl.Series(
-    #         name="valuenum",
-    #         values=value_to_index(df_position.select("value").to_numpy().flatten()),
-    #         dtype=pl.Float64,
-    #     )
-    # )
-    # df_fluid_bal = df_fluid_bal.with_columns(
-    #     pl.Series(
-    #         name="valuenum",
-    #         values=value_to_index(df_fluid_bal.select("value").to_numpy().flatten()),
-    #         dtype=pl.Float64,
-    #     )
-    # )
-    # df_capil_L = df_capil_L.with_columns(
-    #     pl.Series(
-    #         name="valuenum",
-    #         values=value_to_index(df_capil_L.select("value").to_numpy().flatten()),
-    #         dtype=pl.Float64,
-    #     )
-    # )
-    # df_capil_R = df_capil_R.with_columns(
-    #     pl.Series(
-    #         name="valuenum",
-    #         values=value_to_index(df_capil_R.select("value").to_numpy().flatten()),
-    #         dtype=pl.Float64,
-    #     )
-    # )
-    # df_imp_perf = df_imp_perf.with_columns(
-    #     pl.Series(
-    #         name="valuenum",
-    #         values=value_to_index(df_imp_perf.select("value").to_numpy().flatten()),
-    #         dtype=pl.Float64,
-    #     )
-    # )
 
     print("Concatenating variables...")
     df_ev = pl.concat(
@@ -259,11 +196,6 @@ if __name__ == "__main__":
             df_po2_art,
             df_height,
             df_gluc,
-            # df_position,
-            # df_fluid_bal,
-            # df_capil_L,
-            # df_capil_R,
-            # df_imp_perf,
         ]
     )
 
@@ -329,8 +261,6 @@ if __name__ == "__main__":
     df_ev_hadm_demog = df_ev_hadm.join(df_demog, on="subject_id")
 
     # Write csv to disk
-    # n of stays : 70071
-    # n of stays with origin filtering : 48640
     print("Writing to disk...")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
