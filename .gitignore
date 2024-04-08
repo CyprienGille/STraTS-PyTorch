@@ -1,3 +1,4 @@
 generated/
-__pycache__/
+**/__pycache__/
 exp_creatinine/
+exp_creat_reg/
