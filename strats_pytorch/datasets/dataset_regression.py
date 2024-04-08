@@ -3,8 +3,8 @@ from typing import Optional, Tuple
 from torch import Tensor, cat, ones_like
 from torch.nn.utils.rnn import pad_sequence
 
-from dataset import MIMIC
-from utils import denorm, norm
+from strats_pytorch.datasets.dataset import MIMIC
+from strats_pytorch.utils import denorm, norm
 
 
 class MIMIC_Reg(MIMIC):
