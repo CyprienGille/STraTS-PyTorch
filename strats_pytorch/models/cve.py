@@ -1,6 +1,6 @@
 """A One-to-Many approach to embedding values"""
-from torch import zeros, Tensor
-from torch import nn
+
+from torch import Tensor, nn
 
 
 class CVE(nn.Module):
