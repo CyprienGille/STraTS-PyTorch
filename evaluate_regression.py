@@ -14,6 +14,8 @@ def get_model_and_dl(
     model_dir: str,
     data_path: str,
     back_interval=2880,
+    n_vars=29,
+    var_id=0,
     normalize_times=True,
     normalize_vars=True,
     verbose=False,
@@ -21,13 +23,13 @@ def get_model_and_dl(
     dim_embed=104,
     n_heads=4,
 ):
-    ds = MIMIC_Reg(data_path, var_id=47, crop_back_interval=back_interval)
+    ds = MIMIC_Reg(data_path, var_id=var_id, crop_back_interval=back_interval)
     ds.restrict_to_indexes(np.load(model_dir + "test_idx.npy"))
     ds.normalize(normalize_vars, normalize_times, verbose=verbose)
     dl = DataLoader(ds, batch_size=1, collate_fn=padded_collate_fn, shuffle=False)
 
     model = STraTS(
-        n_var_embs=206,
+        n_var_embs=n_vars,
         dim_demog=2,
         dropout=0.0,
         activation="gelu",
@@ -46,10 +48,17 @@ def get_model_and_dl(
 if __name__ == "__main__":
     exp_n = 52
     path = f"exp_creat_reg/exp_{exp_n}/"
+    # Note : bottom-up variables -> creat=0
+    # Note : top-down variables -> creat=47
+    var_id = 47
 
     model, test_dl = get_model_and_dl(
         model_dir=path,
+        # data_path="generated/29var_EH_culled_reg.csv",
         data_path="generated/top_206_culled_reg.csv",
+        n_vars=206,
+        var_id=var_id,
+        back_interval=2880,
         n_layers=2,
         dim_embed=102,
         n_heads=3,
@@ -62,8 +71,8 @@ if __name__ == "__main__":
     error = 0.0
     y_pred = []
     y_true = []
-    creat_mean = test_dl.dataset.means[47]
-    creat_std = test_dl.dataset.stds[47]
+    creat_mean = test_dl.dataset.means[var_id]
+    creat_std = test_dl.dataset.stds[var_id]
     for demog, values, times, variables, tgt, _, masks in tqdm(test_dl):
         pred_val = model(demog, values, times, variables, masks)
         error += loss_fn(pred_val, tgt.squeeze()).item()
