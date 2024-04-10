@@ -1,3 +1,4 @@
 generated/
 __pycache__/
 exp_creatinine/
+*.egg*
