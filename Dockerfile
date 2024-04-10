@@ -7,6 +7,7 @@ RUN pip install polars==0.19.13
 RUN pip install pandas==2.1.3
 RUN pip install scikit-learn==1.3.2
 RUN pip install matplotlib==3.8.2
+RUN pip install dask==2023.12.0
 
 
 ARG GROUP_ID=1000
