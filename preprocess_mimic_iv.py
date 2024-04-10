@@ -1,26 +1,16 @@
 # %%
 # Imports and definitions
-import polars as pl
-import numpy as np
 import os
+
+import numpy as np
+import polars as pl
+
+from strats_pytorch.utils import value_to_index
 
 data_dir = "../mimic-iv-2.2/"
 output_dir = "generated/"
-output_csv_name = "creat17NoText.csv"
-
-
-def value_to_index(vals):
-    d = {}
-    indexes = []
-    free_index = 0  # the lowest unused index
-    for id in vals:
-        if id not in d.keys():
-            # if the id is new
-            # allocate to the id the free index
-            d[id] = free_index
-            free_index += 1
-        indexes.append(d[id])
-    return indexes
+output_csv_name = "29var_EH.csv"
+origins_to_keep = ["EMERGENCY ROOM", "TRANSFER FROM HOSPITAL"]
 
 
 # %%
@@ -48,11 +38,11 @@ if __name__ == "__main__":
             .with_columns(
                 pl.col("charttime").str.strptime(pl.Datetime, format="%Y-%m-%d %T")
             )
-            .collect(streaming=False)
+            .collect(streaming=True)
         )
 
     def remove_outside_range(df, low, high):
-        return df.filter((pl.col("valuenum") > low) & (pl.col("valuenum") < high))
+        return df.filter((pl.col("valuenum") >= low) & (pl.col("valuenum") <= high))
 
     # Load chart events selectively, parse dates
     print("Loading chart events... (can take some time)")
@@ -106,6 +96,42 @@ if __name__ == "__main__":
     # Inspired O2 fraction
     df_insp_o2 = get_item_lazy(223835)
 
+    # Blood flow (ml/min) (dialysis)
+    df_blood_flow = get_item_lazy(224144)
+
+    # Blood Urea Nitrogen (BUN)
+    df_bun = get_item_lazy(225624)
+
+    # Platelet count
+    df_plat = get_item_lazy(227457)
+
+    # Lactic Acid
+    df_lact = get_item_lazy(225668)
+
+    # O2 saturation pulseoxymetry (SpO2)
+    df_spo2 = get_item_lazy(220277)
+
+    # Hemoglobin
+    df_hemog = get_item_lazy(220228)
+
+    # Albumin
+    df_albu = get_item_lazy(227456)
+
+    # Anion Gap
+    df_anion = get_item_lazy(227073)
+
+    # Prothrombin time
+    df_prot = get_item_lazy(227465)
+
+    # Arterial O2 Pressure (pO2, arterial)
+    df_po2_art = get_item_lazy(220224)
+
+    # Height (cm)
+    df_height = get_item_lazy(226730)
+
+    # Glucose (serum)
+    df_gluc = get_item_lazy(220621)
+
     # Remove outliers
     print("Removing outliers...")
     df_creat = remove_outside_range(df_creat, 0, 10)
@@ -125,6 +151,18 @@ if __name__ == "__main__":
     df_vol = remove_outside_range(df_vol, 0.9, 60)
     df_cvp = remove_outside_range(df_cvp, 2, 20)
     df_insp_o2 = remove_outside_range(df_insp_o2, 10, 100)
+    df_blood_flow = remove_outside_range(df_blood_flow, 0, 1000)
+    df_bun = remove_outside_range(df_bun, 0, 300)
+    df_plat = remove_outside_range(df_plat, 0, 500)
+    df_lact = remove_outside_range(df_lact, 0, 40)
+    df_spo2 = remove_outside_range(df_spo2, 0, 100)
+    df_hemog = remove_outside_range(df_hemog, 0, 30)
+    df_albu = remove_outside_range(df_albu, 0, 10)
+    df_anion = remove_outside_range(df_anion, 0, 50)
+    df_prot = remove_outside_range(df_prot, 0, 100)
+    df_po2_art = remove_outside_range(df_po2_art, 0, 1000)
+    df_height = remove_outside_range(df_height, 0, 300)
+    df_gluc = remove_outside_range(df_gluc, 0, 500)
 
     print("Concatenating variables...")
     df_ev = pl.concat(
@@ -146,6 +184,18 @@ if __name__ == "__main__":
             df_vol,
             df_cvp,
             df_insp_o2,
+            df_blood_flow,
+            df_bun,
+            df_plat,
+            df_lact,
+            df_spo2,
+            df_hemog,
+            df_albu,
+            df_anion,
+            df_prot,
+            df_po2_art,
+            df_height,
+            df_gluc,
         ]
     )
 
@@ -161,20 +211,23 @@ if __name__ == "__main__":
     # Load the admissions dataframe, parse dates
     print("Loading admissions...")
     df_hadm = pl.read_csv(
-        data_dir + "hosp/admissions.csv", columns=["admittime", "hadm_id", "deathtime"]
+        data_dir + "hosp/admissions.csv",
+        columns=["admittime", "hadm_id", "deathtime", "admission_location"],
     ).with_columns(pl.col("admittime").str.strptime(pl.Datetime, format="%Y-%m-%d %T"))
 
     # Add the admission info to the event dataframe
     print("Joining events and admission data...")
     df_ev_hadm = df_ev.join(df_hadm, on="hadm_id")
 
+    # Only keep the stays of patients that come from the specified origins
+    print("Removing stays by origin...")
+    df_ev_hadm = df_ev_hadm.filter(pl.col("admission_location").is_in(origins_to_keep))
+
     # Add a column with relative event time (since admission) in minutes
     print("Creating and sorting by 'Time since admission'...")
     df_ev_hadm = df_ev_hadm.with_columns(
         (pl.col("charttime") - pl.col("admittime")).dt.minutes().alias("rel_charttime")
     )
-    # # Group by five minutes
-    # df_ev_hadm = df_ev_hadm.with_columns(pl.col("rel_charttime") // 5)
 
     df_ev_hadm = df_ev_hadm.sort([pl.col("hadm_id"), pl.col("rel_charttime")])
 
@@ -208,11 +261,12 @@ if __name__ == "__main__":
     df_ev_hadm_demog = df_ev_hadm.join(df_demog, on="subject_id")
 
     # Write csv to disk
-    # Current n of stays : 70071
     print("Writing to disk...")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    df_ev_hadm_demog.write_csv(output_dir + output_csv_name)
+    df_ev_hadm_demog.drop(
+        ["admission_location", "hadm_id", "stay_id", "subject_id", "admittime"]
+    ).write_csv(output_dir + output_csv_name)
     print(f"Done. Wrote {df_ev_hadm_demog.select(pl.count()).item()} lines to csv.")
     print(
         f"Current database contains {len(np.unique(df_ev_hadm_demog.select('ind')))} stays."

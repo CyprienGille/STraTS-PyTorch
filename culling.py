@@ -3,13 +3,14 @@
 - The part of the stays before (but not including) the last observation of the target variable
 Adds a class label for each kept stay according to that last observation.
 """
+
 import pandas as pd
 from tqdm import tqdm
 
-from preprocess_mimic_iv import value_to_index
+from strats_pytorch.utils import value_to_index
 
 
-def creatinine_to_stage(value):
+def creat_to_4_stages(value):
     """Converts creatinine values to renal risk/injury/failure stages
     according to the KDIGO criteria
 
@@ -35,10 +36,10 @@ def creatinine_to_stage(value):
 # Params
 progress_bar = True
 tgt_item_id = 0  # the id of the target variable
-val_to_label_func = creatinine_to_stage
-data_path = "generated/creat17NoText.csv"
-# out_path = data_path
-out_path = "generated/creat17NoText_culled.csv"
+keep_tgt_var = False
+val_to_label_func = creat_to_4_stages
+data_path = "generated/29var_EH.csv"
+out_path = "generated/29var_EH_culled.csv"
 
 
 if __name__ == "__main__":
@@ -46,6 +47,8 @@ if __name__ == "__main__":
     df = pd.read_csv(data_path)
 
     to_drop_indexes = pd.Index([])
+
+    ind_to_label = {}
 
     indexes = df["ind"].unique()
 
@@ -72,14 +75,27 @@ if __name__ == "__main__":
             # Only keep the part of the stay before the last observation of the target variable
             to_drop = data[data["rel_charttime"] >= last_obs_time]
             to_drop_indexes = to_drop_indexes.append(to_drop.index)
+            if not keep_tgt_var:
+                to_drop_indexes = to_drop_indexes.append(
+                    data[data["itemid"] == tgt_item_id].index
+                )
 
             # Create the label for this stay
-            df.loc[df["ind"] == ind, "label"] = val_to_label_func(last_obs_val)
+            ind_to_label[ind] = val_to_label_func(last_obs_val)
         else:
             # remove stays with no target measure
             to_drop_indexes = to_drop_indexes.append(data.index)
 
     df.drop(to_drop_indexes, inplace=True)
+    # add labels
+    indexes = df["ind"].unique()
+    if progress_bar:
+        pbar = tqdm(indexes)
+    else:
+        pbar = indexes
+    for ind in pbar:
+        df.loc[df["ind"] == ind, "label"] = ind_to_label[ind]
+
     # reindex the stays
     df["ind"] = value_to_index(df["ind"])
 

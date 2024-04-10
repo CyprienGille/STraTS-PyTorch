@@ -1,15 +1,19 @@
 # Imports
 import os
-import numpy as np
-from tqdm import tqdm
 from typing import Optional
-from sklearn.model_selection import train_test_split
+
+import numpy as np
 import torch
+from sklearn.model_selection import train_test_split
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
+from strats_pytorch.datasets.dataset_int_classif import (
+    MIMIC_Int_Classif,
+    padded_collate_fn,
+)
 from strats_pytorch.models.strats import STraTS
-from strats_pytorch.datasets.dataset_int_classif import MIMIC_Int_Classif, padded_collate_fn
 
 # Hyperparameters
 exp_dir = "exp_creatinine/"
@@ -25,18 +29,18 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 architecture = STraTS
 train_prop = 0.8
-train_batch_size = 15
-test_batch_size = 15
+train_batch_size = 10
+test_batch_size = 10
 learning_rate = 0.0001
-num_epochs = 5
-dropout = 0.2
-n_layers = 2
-dim_embed = 52
+num_epochs = 10
+dropout = 0.1
+n_layers = 4
+dim_embed = 104
 n_heads = 4
-weight_class_0 = 1.33
-weight_class_1 = 8
-weight_class_2 = 21.0
-weight_class_3 = 22.0
+weight_class_0 = 1.35
+weight_class_1 = 2.47
+weight_class_2 = 4.59
+weight_class_3 = 4.47
 normalize_vars = True
 normalize_times = True
 sched_patience = 2
@@ -57,10 +61,16 @@ train_indexes, test_indexes = train_test_split(
 train_ds.restrict_to_indexes(train_indexes)
 test_ds.restrict_to_indexes(test_indexes)
 train_ds.normalize(
-    normalize_vars=normalize_vars, normalize_times=normalize_times, verbose=True
+    normalize_vars=normalize_vars,
+    normalize_times=normalize_times,
+    per_stay=False,
+    verbose=True,
 )
 test_ds.normalize(
-    normalize_vars=normalize_vars, normalize_times=normalize_times, verbose=True
+    normalize_vars=normalize_vars,
+    normalize_times=normalize_times,
+    per_stay=False,
+    verbose=True,
 )
 
 
@@ -88,13 +98,14 @@ test_dl = DataLoader(
 
 # Model
 model = architecture(
-    n_var_embs=17,
+    n_var_embs=29,
     dim_demog=2,
     dim_embed=dim_embed,
     n_layers=n_layers,
     n_heads=n_heads,
     dropout=dropout,
     forecasting=False,
+    regression=False,
     n_classes=4,
 )
 model = model.to(DEVICE)
@@ -109,7 +120,7 @@ weight = torch.Tensor(
 loss_fn = torch.nn.CrossEntropyLoss(weight=weight)
 # LR Scheduler
 sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optim, patience=sched_patience, verbose=True
+    optim, factor=0.5, patience=sched_patience, verbose=True
 )
 
 

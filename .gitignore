@@ -2,3 +2,6 @@ generated/
 __pycache__/
 exp_creatinine/
 *.egg*
+**/__pycache__/
+exp_creatinine/
+exp_creat_reg/

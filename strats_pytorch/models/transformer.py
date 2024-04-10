@@ -1,5 +1,6 @@
-from torch import nn
 from typing import Optional
+
+from torch import nn
 
 
 class TransformerEncoderWrapper(nn.Module):
@@ -10,13 +11,15 @@ class TransformerEncoderWrapper(nn.Module):
         n_heads: int = 4,
         dim_ff: Optional[int] = None,
         dropout: float = 0.0,
+        activation: str = "relu",
     ) -> None:
         super().__init__()
-        self.d_model, self.n_layers, self.n_heads, self.dropout = (
+        self.d_model, self.n_layers, self.n_heads, self.dropout, self.activ = (
             d_model,
             n_layers,
             n_heads,
             dropout,
+            activation,
         )
         self.dim_ff = dim_ff or 2 * d_model
 
@@ -26,6 +29,7 @@ class TransformerEncoderWrapper(nn.Module):
             dim_feedforward=self.dim_ff,
             dropout=self.dropout,
             batch_first=True,
+            activation=self.activ,
         )
         self.transformer = nn.TransformerEncoder(
             encoder_layer, num_layers=self.n_layers

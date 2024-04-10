@@ -1,5 +1,6 @@
 from typing import Tuple
-from torch import Tensor, ones_like, cat
+
+from torch import Tensor, cat, ones_like
 from torch.nn.utils.rnn import pad_sequence
 
 from strats_pytorch.datasets.dataset import MIMIC
