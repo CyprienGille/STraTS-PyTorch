@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Load chart events selectively, parse dates
     print("Loading chart events... (can take some time)")
 
-    stats = pd.read_csv("mimic_stats.csv", sep=",")
+    stats = pd.read_csv("generated/mimic_stats.csv", sep=",")
     # Only keep Numeric or Boolean items
     stats = stats[stats["type"] != "Text"]
     df_list = []
@@ -72,7 +72,9 @@ if __name__ == "__main__":
     # Add a column with relative event time (since admission) in minutes
     print("Creating and sorting by 'Time since admission'...")
     df_ev_hadm = df_ev_hadm.with_columns(
-        (pl.col("charttime") - pl.col("admittime")).dt.minutes().alias("rel_charttime")
+        (pl.col("charttime") - pl.col("admittime"))
+        .dt.total_minutes()
+        .alias("rel_charttime")
     )
 
     df_ev_hadm = df_ev_hadm.sort([pl.col("hadm_id"), pl.col("rel_charttime")])
@@ -94,7 +96,7 @@ if __name__ == "__main__":
     val_counts_dict = dict(zip(uniques, counts))
 
     df_ev_hadm = df_ev_hadm.with_columns(
-        pl.col("ind").map_dict(val_counts_dict).alias("count")
+        pl.col("ind").replace(val_counts_dict).alias("count")
     )
     df_ev_hadm = df_ev_hadm.filter((pl.col("count") > 9) & (pl.col("count") <= 20000))
 
@@ -112,7 +114,7 @@ if __name__ == "__main__":
     df_ev_hadm_demog.drop(
         ["admission_location", "hadm_id", "stay_id", "subject_id", "admittime"]
     ).write_csv(output_dir + output_csv_name)
-    print(f"Done. Wrote {df_ev_hadm_demog.select(pl.count()).item()} lines to csv.")
+    print(f"Done. Wrote {df_ev_hadm_demog.select(pl.len()).item()} lines to csv.")
     print(
         f"Current database contains {len(np.unique(df_ev_hadm_demog.select('ind')))} stays."
     )

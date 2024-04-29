@@ -9,40 +9,42 @@ from strats_pytorch.utils import value_to_index
 
 data_dir = "../mimic-iv-2.2/"
 output_dir = "generated/"
-output_csv_name = "29var_EH.csv"
-origins_to_keep = ["EMERGENCY ROOM", "TRANSFER FROM HOSPITAL"]
+output_csv_name = "29var.csv"
+# origins_to_keep = ["EMERGENCY ROOM", "TRANSFER FROM HOSPITAL"]
+
+
+def get_item_lazy(itemid: int) -> pl.DataFrame:
+    """Get the events for a particular itemid.
+
+    Leverage the speed of polars LazyFrames + batching.
+    """
+    return (
+        pl.scan_csv(data_dir + "icu/chartevents.csv")
+        .select(
+            [
+                "hadm_id",
+                "stay_id",
+                "subject_id",
+                "charttime",
+                "itemid",
+                "value",
+                "valuenum",
+            ]
+        )
+        .filter(pl.col("itemid").is_in([itemid]))
+        .with_columns(
+            pl.col("charttime").str.strptime(pl.Datetime, format="%Y-%m-%d %T")
+        )
+        .collect(streaming=True)
+    )
+
+
+def remove_outside_range(df, low, high):
+    return df.filter((pl.col("valuenum") >= low) & (pl.col("valuenum") <= high))
 
 
 # %%
 if __name__ == "__main__":
-
-    def get_item_lazy(itemid: int) -> pl.DataFrame:
-        """Get the events for a particular itemid.
-
-        Leverage the speed of polars LazyFrames + batching.
-        """
-        return (
-            pl.scan_csv(data_dir + "icu/chartevents.csv")
-            .select(
-                [
-                    "hadm_id",
-                    "stay_id",
-                    "subject_id",
-                    "charttime",
-                    "itemid",
-                    "value",
-                    "valuenum",
-                ]
-            )
-            .filter(pl.col("itemid").is_in([itemid]))
-            .with_columns(
-                pl.col("charttime").str.strptime(pl.Datetime, format="%Y-%m-%d %T")
-            )
-            .collect(streaming=True)
-        )
-
-    def remove_outside_range(df, low, high):
-        return df.filter((pl.col("valuenum") >= low) & (pl.col("valuenum") <= high))
 
     # Load chart events selectively, parse dates
     print("Loading chart events... (can take some time)")
@@ -220,13 +222,15 @@ if __name__ == "__main__":
     df_ev_hadm = df_ev.join(df_hadm, on="hadm_id")
 
     # Only keep the stays of patients that come from the specified origins
-    print("Removing stays by origin...")
-    df_ev_hadm = df_ev_hadm.filter(pl.col("admission_location").is_in(origins_to_keep))
+    # print("Removing stays by origin...")
+    # df_ev_hadm = df_ev_hadm.filter(pl.col("admission_location").is_in(origins_to_keep))
 
     # Add a column with relative event time (since admission) in minutes
     print("Creating and sorting by 'Time since admission'...")
     df_ev_hadm = df_ev_hadm.with_columns(
-        (pl.col("charttime") - pl.col("admittime")).dt.minutes().alias("rel_charttime")
+        (pl.col("charttime") - pl.col("admittime"))
+        .dt.total_minutes()
+        .alias("rel_charttime")
     )
 
     df_ev_hadm = df_ev_hadm.sort([pl.col("hadm_id"), pl.col("rel_charttime")])
@@ -248,7 +252,7 @@ if __name__ == "__main__":
     val_counts_dict = dict(zip(uniques, counts))
 
     df_ev_hadm = df_ev_hadm.with_columns(
-        pl.col("ind").map_dict(val_counts_dict).alias("count")
+        pl.col("ind").replace(val_counts_dict).alias("count")
     )
     df_ev_hadm = df_ev_hadm.filter((pl.col("count") > 9) & (pl.col("count") <= 1700))
 
@@ -267,7 +271,7 @@ if __name__ == "__main__":
     df_ev_hadm_demog.drop(
         ["admission_location", "hadm_id", "stay_id", "subject_id", "admittime"]
     ).write_csv(output_dir + output_csv_name)
-    print(f"Done. Wrote {df_ev_hadm_demog.select(pl.count()).item()} lines to csv.")
+    print(f"Done. Wrote {df_ev_hadm_demog.select(pl.len()).item()} lines to csv.")
     print(
         f"Current database contains {len(np.unique(df_ev_hadm_demog.select('ind')))} stays."
     )
