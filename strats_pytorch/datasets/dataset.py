@@ -80,7 +80,7 @@ class MIMIC(Dataset):
             data = self.df["anchor_age"].copy()
             self.age_mean = data.mean()
             self.age_std = data.std(ddof=0)
-            self.df["anchor_age"] = norm(data, mean, std)
+            self.df["anchor_age"] = norm(data, self.age_mean, self.age_std)
 
         if normalize_times:
             if per_stay:
