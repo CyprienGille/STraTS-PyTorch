@@ -1,20 +1,24 @@
+import os
+
 import pandas as pd
 from tqdm import tqdm
 
 from strats_pytorch.utils import value_to_index
 
 # Params
+split_into_files = True  # create individual stay files
 progress_bar = True
-tgt_item_id = 47  # the id of the target variable (if top-down, creat->47)
+tgt_item_id = 47  # the id of the target variable
 will_keep_tgt_var = False
 data_path = "generated/top_206.csv"
 out_path = "generated/top_206_culled_reg.csv"
+
 
 if __name__ == "__main__":
     print("Reading data...")
     df = pd.read_csv(data_path)
 
-    to_drop_indexes = pd.Index([])
+    to_drop_indexes = pd.Index([], dtype=int)
 
     indexes = df["ind"].unique()
 
@@ -61,7 +65,20 @@ if __name__ == "__main__":
     # reindex the stays
     df["ind"] = value_to_index(df["ind"])
 
+    ## Bottom-up (29 var)
+    # Latest database contains 66324 stays for 19 461 981 lines
+    # Latest database (EH) contains 46369 stays for 13 552 031 lines
+    ## Top Down (206 var)
+    # Latest database contains 69023 stays for 75 802 088 lines
+
     print("Writing data...")
+    if split_into_files:
+        out_dir = out_path[:-4] + "/"
+        os.makedirs(out_dir, exist_ok=True)
+
+        for ind in tqdm(df["ind"].unique()):
+            df[df["ind"] == ind].to_csv(out_dir + f"ind_{ind}.csv")
+
     df.to_csv(out_path)
     print(
         f"Done. Current database contains {len(df['ind'].unique())} stays for {len(df.index)} lines."
