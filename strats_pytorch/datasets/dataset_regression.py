@@ -14,6 +14,7 @@ class MIMIC_Reg(MIMIC):
         var_id: int = 0,
         crop_back_interval: Optional[int] = None,
         keep_tgt_var: bool = False,
+        masked_features: Optional[list[int]] = None,
     ):
         """Load MIMIC-IV data into a Dataset object intended for regression
 
@@ -32,6 +33,7 @@ class MIMIC_Reg(MIMIC):
         self.var_id = var_id
         self.back = crop_back_interval
         self.keep_tgt_var = keep_tgt_var
+        self.masked_features = masked_features
 
     def __getitem__(
         self, index: int
@@ -47,10 +49,10 @@ class MIMIC_Reg(MIMIC):
             demog, values, times, variables, target_value, target_time
         """
 
-        data = self.df.loc[self.df["ind"] == self.indexes[index]].copy()
+        base_data = self.df.loc[self.df["ind"] == self.indexes[index]].copy()
 
         try:
-            tgt_line = data.loc[data["itemid"] == self.var_id].iloc[-1]
+            tgt_line = base_data.loc[data["itemid"] == self.var_id].iloc[-1]
             tgt_val = Tensor([tgt_line["valuenum"]])
             tgt_time = Tensor([tgt_line["rel_charttime"]])
         except IndexError:
@@ -59,14 +61,23 @@ class MIMIC_Reg(MIMIC):
             )
 
         if not self.keep_tgt_var:
-            data = data.loc[data["itemid"] != self.var_id]
+            data = base_data.loc[data["itemid"] != self.var_id]
+        else:
+            # If keeping target var, don't include target val in input
+            data = base_data[base_data["rel_charttime"] < tgt_time.item()]
+
+        if self.masked_features is not None:
+            data = data.loc[~data["itemid"].isin(self.masked_features)]
 
         values = Tensor(data["valuenum"].to_numpy())
         times = Tensor(data["rel_charttime"].to_numpy())
         variables = Tensor(data["itemid"].to_numpy())
 
-        if self.back is not None:
+        if self.back is not None and len(values) != 0:
             # Get the indices of times that are at most [back] minutes before tgt time
+            # No need for an observation window if sequence is empty
+            # Note : empty sequences (for example due to feature masking) will raise an error
+            # when processed through a model
             cutoff_time = (
                 tgt_time.item() - self.back
                 if not self.normed_times
@@ -77,6 +88,21 @@ class MIMIC_Reg(MIMIC):
                 )
             )
             to_keep = times >= cutoff_time
+
+            additional_backs = 1
+            while len(values[to_keep]) == 0:
+                # Try to avoid empty sequences (which raise an Exception when given to a model)
+                # While there are no kept datapoints, widen the window by [back] minutes
+                cutoff_time = norm(
+                    denorm(tgt_time.item(), self.time_mean, self.time_std)
+                    - (additional_backs + 1) * self.back,
+                    self.time_mean,
+                    self.time_std,
+                )
+                to_keep = times >= cutoff_time
+
+                additional_backs += 1
+
             values = values[to_keep]
             times = times[to_keep]
             variables = variables[to_keep]
@@ -102,7 +128,7 @@ def padded_collate_fn(batch: list):
 
     padded_values = pad_sequence(values, batch_first=True, padding_value=-1e4)
     padded_times = pad_sequence(times, batch_first=True, padding_value=-1e4)
-    padded_variables = pad_sequence(variables, batch_first=True, padding_value=47)
+    padded_variables = pad_sequence(variables, batch_first=True, padding_value=0)
 
     demog = cat([t.unsqueeze(0) for t in demog])
 
