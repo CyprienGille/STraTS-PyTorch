@@ -3,6 +3,8 @@ from numpy import float64, int64
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+from strats_pytorch.utils import norm
+
 
 class MIMIC(Dataset):
     def __init__(
@@ -70,21 +72,15 @@ class MIMIC(Dataset):
                 self.means[unique_itemid] = mean
                 self.stds[unique_itemid] = std
 
-                if std == 0:
-                    # if there is only one value for this itemid
-                    self.df.loc[self.df["itemid"] == unique_itemid, "valuenum"] = (
-                        data - mean
-                    )
-                else:
-                    self.df.loc[self.df["itemid"] == unique_itemid, "valuenum"] = (
-                        data - mean
-                    ) / std
+                self.df.loc[self.df["itemid"] == unique_itemid, "valuenum"] = norm(
+                    data, mean, std
+                )
 
             # age normalization
             data = self.df["anchor_age"].copy()
             self.age_mean = data.mean()
             self.age_std = data.std(ddof=0)
-            self.df["anchor_age"] = (data - self.age_mean) / self.age_std
+            self.df["anchor_age"] = norm(data, mean, std)
 
         if normalize_times:
             if per_stay:
@@ -106,15 +102,9 @@ class MIMIC(Dataset):
                     self.time_means[ind] = mean
                     self.time_stds[ind] = std
 
-                    if std == 0:
-                        # If there is only one time value
-                        self.df.loc[self.df["ind"] == ind, "rel_charttime"] = (
-                            data - mean
-                        )
-                    else:
-                        self.df.loc[self.df["ind"] == ind, "rel_charttime"] = (
-                            data - mean
-                        ) / std
+                    self.df.loc[self.df["ind"] == ind, "rel_charttime"] = norm(
+                        data, mean, std
+                    )
             else:
                 if verbose:
                     print("Normalizing times...")
@@ -123,7 +113,7 @@ class MIMIC(Dataset):
                 data = self.df["rel_charttime"].copy()
                 self.time_mean = data.mean()
                 self.time_std = data.std(ddof=0)
-                self.df["rel_charttime"] = (data - self.time_mean) / self.time_std
+                self.df["rel_charttime"] = norm(data, self.time_mean, self.time_std)
         self.normed_vars = normalize_vars
         self.normed_times = normalize_times
 
