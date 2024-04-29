@@ -1,15 +1,14 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from culling import creat_to_4_stages
-from evaluate_int_classif import print_metrics
 from strats_pytorch.datasets.dataset_regression import MIMIC_Reg, padded_collate_fn
+from strats_pytorch.eval_utils import get_metrics
 from strats_pytorch.models.strats import STraTS
-from strats_pytorch.utils import denorm
+from strats_pytorch.utils import creat_to_4_stages, denorm
 
 
 def get_model_and_dl(
@@ -92,29 +91,25 @@ if __name__ == "__main__":
         data_path="generated/top_206_culled_reg.csv",
         n_vars=206,
         var_id=var_id,
-        back_interval=2880,
+        back_interval=3100,
         n_layers=2,
         dim_embed=102,
         n_heads=3,
     )
     model.eval()
 
-    loss_fn = torch.nn.L1Loss()
-
     print("Getting metrics...")
-    error = 0.0
     y_pred = []
     y_true = []
     creat_mean = test_dl.dataset.means[var_id]
     creat_std = test_dl.dataset.stds[var_id]
+
     for demog, values, times, variables, tgt, _, masks in tqdm(test_dl):
         pred_val = model(demog, values, times, variables, masks)
-        error += loss_fn(pred_val, tgt.squeeze()).item()
 
-        pred_val_denorm = denorm(pred_val.item(), creat_mean, creat_std)
-        tgt_val_denorm = denorm(tgt.item(), creat_mean, creat_std)
-        y_pred.append(creat_to_4_stages(pred_val_denorm))
-        y_true.append(creat_to_4_stages(tgt_val_denorm))
+        y_true.append(denorm(tgt.item(), creat_mean, creat_std))
+        y_pred.append(denorm(pred_val.item(), creat_mean, creat_std))
 
-    print(f"Average Test Mean Error for exp {exp_n} : {error / len(test_dl):.6f}")
-    print_metrics(y_true, y_pred)
+    print(f"Metrics for exp {exp_n}:")
+    mae, medae, r2, d2, acc, f1 = get_metrics(y_true, y_pred)
+    print(f"MAE: {mae} /MedAE: {medae} /r2: {r2} /d2: {d2} /Acc: {acc} /f1: {f1}")
