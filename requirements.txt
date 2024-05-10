@@ -4,4 +4,4 @@ pandas==1.5.2
 polars==0.20.23
 scikit-learn==1.4.2
 torch==2.3.0
-tqdm==4.65.0
+tqdm==4.66.3
